@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <div>
+      You have visited this page <span id="count"></span> times.
+    </div>
+    
+    <script type="text/javascript">
+      var visitCount = 0;
+      // Data can be stored in the browser across multiple page requests using localStorage.  
+      if (localStorage.visitCount) {
+        visitCount = parseInt(localStorage.visitCount);
+      }
+      visitCount ++ ;
+      localStorage.setItem('visitCount', visitCount);
+
+      var count = document.getElementById('count');
+      count.innerHTML = visitCount;
+
+      if (visitCount > 10) {
+        count.style.backgroundColor = 'red';
+      }
+    </script>
+  </body>
+</html>

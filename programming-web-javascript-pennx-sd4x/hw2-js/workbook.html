@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <div>
+      You have visited this page <span id="count"></span> times.
+    </div>
+    <p>
+      Your last visit was on <span id="lastVisit"></span>.
+    </p>
+    <script type="text/javascript">
+      /*
+      If the contents that we want to store in localStorage is not simply a number, but an object containing various variables, we need to JSON.
+      This allows us to use objects in between page requests within localStorage.
+      We use JSON.stringify() to convert an object to JSON, and
+      we use JSON.parse() to convert the JSON back to the object.
+      */
+      let visitCount = 0;
+      let lastDate = 'never';
+      // if lastVisit Object exists, parse & use its data. 
+      if (localStorage.lastVisit) {
+        let lastVisit = JSON.parse(localStorage.lastVisit);
+        visitCount = lastVisit.count;
+        lastDate = lastVisit.date;
+      }
+      // show the date of last visit
+      document.getElementById('lastVisit').innerHTML = lastDate;
+      // incr & show the visit counts
+      visitCount++;
+      document.getElementById('count').innerHTML = visitCount;
+
+      // build new visit Object
+      let visitObj = {};
+      visitObj.date = new Date();
+      visitObj.count = visitCount;
+      // turn object into JSON and insert in localStorage
+      localStorage.lastVisit = JSON.stringify(visitObj);
+
+    </script>
+  </body>
+</html>
