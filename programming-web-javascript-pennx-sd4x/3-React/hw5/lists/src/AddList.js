@@ -2,11 +2,27 @@ import React, { Component } from 'react';
 
 class AddList extends Component {
 
+  constructor() {
+    super(props);
+    this.state = {
+      newList: ''
+    }
+  }
 
   handleSubmit(e) {
       e.preventDefault(); // this prevents the page from reloading -- do not delete this line!
 
       // Implement the rest of this function here!
+      if(this.refs.id.value === '') {
+        alert('Name is required!');
+      } else {
+        this.setState(
+          {newList : this.refs.id.value},
+          () => {
+            this.props.addItem(this.state)
+          }
+        )
+      }
   }
 
   render() {

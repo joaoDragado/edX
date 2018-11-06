@@ -8,9 +8,9 @@ class App extends Component {
   constructor() {
     super();
     this.state = {
-	lists: [], // this holds the name of each list
-	items: {} // this property names of this object are the names of the lists; their values are arrays of the items in each list
-    };
+	    lists: [], // this holds the name of each list
+	    items: {} // this property names of this object are the names of the lists; their values are arrays of the items in each list
+        };
   }
 
   /**
@@ -21,6 +21,14 @@ class App extends Component {
    */
   handleAddList(s) {
       // Implement this function!
+      let updatedLists = this.state.lists.push(s.newList)
+      let updatedItems = this.state.items[s.newList] = []
+      this.setState({
+        lists: updatedLists,
+        items: updatedItems
+      });
+
+      
   }
 
   /**
@@ -33,6 +41,10 @@ class App extends Component {
    */
   handleAddItem(s) {
       // Implement this function!
+      let updatedList = this.state.items[s.name]
+      this.setState({
+        items: updatedList.push(s.newItem)
+      })
   }
 
   /**
