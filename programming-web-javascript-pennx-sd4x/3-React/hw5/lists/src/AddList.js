@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 
 class AddList extends Component {
 
-  constructor() {
+  constructor(props) {
     super(props);
     this.state = {
       newList: ''
@@ -17,9 +17,9 @@ class AddList extends Component {
         alert('Name is required!');
       } else {
         this.setState(
-          {newList : this.refs.id.value},
-          () => {
-            this.props.addItem(this.state)
+          {newList : this.refs.id.value
+          }, () => {
+            this.props.addList(this.state)
           }
         )
       }
