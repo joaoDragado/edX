@@ -1,3 +1,10 @@
+/* MongoDB - Mongoose
+You can access MongoDB directly from your Node app using the MongoClient
+Or, you can install helper packages such as Mongoose to simplify some tasks:
+npm install mongoose --save
+*/
+
+
 var express = require('express');
 var app = express();
 
