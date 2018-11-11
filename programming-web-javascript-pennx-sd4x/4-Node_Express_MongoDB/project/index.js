@@ -1,6 +1,29 @@
 var express = require('express');
 var app = express();
 
+/*  EJS
+EJS, or EmbeddedJS, is a view engine that uses data and embedded JavaScript to produce HTML. This allows webpages to be developed statically and rendered dynamically server-side.
+EmbeddedJS is a package that can be installed with the command: npm install ejs
+
+*/
+
+var express = require('express');
+var app = express();
+
+// Set EJS as the default rendering method in our app
+app.set('view engine', 'ejs');
+
+// the code of the previous example, refactored for use with ejs
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use('/handleForm', (req, res) => {
+  var name = req.body.username;
+  var animals = [].concat(req.body.animal);
+  // renders showAnimals.ejs in views folder
+  res.render('showAnimals', { name: name, animals: animals });
+});
+
 /*
 HTML forms : The form specifies the action and method that the submit button triggers,
 ex. <form action="/handleForm" method="post">
@@ -20,8 +43,22 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/handleForm', (req, res) => {
   // we now access the body of the request, using the name properties of the <input> elements of our form, i.e. username , animal
   var name = req.body.username;
-  var animals = req.body.animal; // this is an array
-  . . .
+  /*we need animals to be an array, so
+  so we use the hack below to make sure
+  animals is array, regardless of the num of items checked.
+  */
+  var animals = [].concat(req.body.animal);
+  // the following is code running in the server,
+  // so we need to generate the HTML to present to the client browser
+  res.type('html').status(200);
+  res.write('Hello, ' + name + ', nice to meet you.');
+  res.write('<p>Here are the animals you like:');
+  res.write('<ul>');
+  animals.forEach( (animal) => {
+    res.write('<li>' + animal + '</li>');
+  });
+  res.write('</ul>');
+  res.write("<a href='/public/form.html'>" + "Back to form</a>");
   res.send('Thank you!');
 });
 
