@@ -27,27 +27,24 @@ app.use( '/api', (req, res) => {
 	}
 	else {
 	    Book.find( query, (err, books) => {
-		if (err) {
-		    res.type('html').status(500);
-		    res.send('Error: ' + err);
-		}
-		else {
-		    res.json(books);
-		}
-	    });	    
-	    }
-	}
-    );
+				if (err) {
+				  res.type('html').status(500);
+				  res.send('Error: ' + err);
+				}
+				else {
+					// server sends a JSON object, containing all the book results, to the browser
+				  res.json(books);
+				}
+	    });
 
+	}
+});
 
 
 /***********************************************/
 
 
-
 app.use('/public', express.static('public'));
-
-
 
 
 app.listen(3000,  () => {
