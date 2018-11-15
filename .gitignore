@@ -1,3 +1,6 @@
+# mongo databases ~ setup, etc
+data/
+
 # notepads, workbooks, etc.
 workbook.*
 
