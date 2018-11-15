@@ -38,15 +38,47 @@ app.use('/findToy', (req, res) => {
   }
 });
 
+
 /*
 This API finds all Animals in the “animals” collection that have a species and gender that match the species> and gender> parameters, respectively, and for which one of the Animal’s traits matches the trait> parameter. All matches should be complete matches, not partial matches using regular expressions, for instance.
+e.g. /findAnimals?species=Dog&trait=loyal&gender=female
 */
 app.use('/findAnimals', (req, res) => {
-  res.json({});
+  var query = {};
+  if (req.query.species) {
+    query.species = req.query.species
+  }
+  if (req.query.gender) {
+    query.gender = req.query.gender
+  }
+  if (req.query.trait) {
+    query['trait'] = req.query.trait
+  }
+  if (Object.keys(query).length == 0) {
+    // all query parameters are unspecified
+    res.json({});
+  }
+  else { // results returned should only contain the fields specified below
+    Animals.find(query, 'name species breed gender age', (err, animals) => {
+      if (err) {
+        res.type('html').status(500)
+        res.send('Error: ' + err)
+      }
+      else if (animals){
+
+      }
+      else { // no results found
+        res.json({});
+      }
+    });
+  }
+
 });
+
 
 /*
 This API finds all Animals in the “animals” collection that have an age that is less than (but not equal to!) the age> parameter.
+e.g. /animalsYoungerThan?age=12
 The return value is an object that has two properties:
 “count”: the number of Animals whose age is less than the age> parameter.
 “names”: an array containing the names of the Animals whose age is less than the age> parameter (these can be arranged in any order in the array)
@@ -54,6 +86,7 @@ The return value is an object that has two properties:
 app.use('/animalsYoungerThan', (req, res) => {
   res.json({});
 });
+
 
 /*This API calculates the total price of purchasing the specified quantities of the Toys with the corresponding IDs, using the Toys’ price from the database.
 The return value is an object that has two properties:
@@ -66,7 +99,6 @@ The return value is an object that has two properties:
 app.use('/calculatePrice', (req, res) => {
   res.json({});
 });
-
 
 
 app.listen(3000, () => {
