@@ -65,7 +65,7 @@ app.use('/findAnimals', (req, res) => {
         res.send('Error: ' + err)
       }
       else if (animals){
-
+        res.json(animals);
       }
       else { // no results found
         res.json({});
@@ -84,7 +84,31 @@ The return value is an object that has two properties:
 “names”: an array containing the names of the Animals whose age is less than the age> parameter (these can be arranged in any order in the array)
 */
 app.use('/animalsYoungerThan', (req, res) => {
-  res.json({});
+  let out = {count: 0, names: []}
+  let age = req.query.age
+  if (age) {
+    Animals.find({age: {$lt: age}}, 'name', (err, animals) => {
+      if (err) {
+        res.type('html').status(500)
+        res.send('Error: ' + err)
+      }
+      else {
+        let count = animals.length
+        if (count > 0) { // if results found
+          out.count = count
+          out.names = animals.map(animal => animal.name)
+          res.json(out);
+        }
+        else { // no animals below age
+          res.json({count:0})
+        }
+      }
+    })
+  }
+  else { // query parameter unspecified
+    res.json({});
+  }
+
 });
 
 
