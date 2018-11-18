@@ -117,14 +117,14 @@ app.use('/animalsYoungerThan', (req, res) => {
 
 /*This API calculates the total price of purchasing the specified quantities of the Toys with the corresponding IDs, using the Toys’ price from the database.
 
-e.g /calculatePrice?id[0]=123&qty[0]=2&id[1]=456&qty[1]=3
-
 The return value is an object that has two properties:
 “totalPrice”: the calculated total for all Toys.
 “items”: an array containing objects that hold information about the Toys that are included; for each Toy, there should be an object with these three properties:
   “item”: the Toy’s ID, as specified in the query
   “qty”: the quantity of the Toy, as specified in the query
   “subtotal”: the Toy’s price multiplied by the quantity
+
+e.g /calculatePrice?id[0]=123&qty[0]=2&id[1]=456&qty[1]=3
 */
 
 app.get('/calculatePrice', (req, res) => {
@@ -136,32 +136,37 @@ app.get('/calculatePrice', (req, res) => {
       query.qty = req.query.qty;
   }
 
+  // transform query into map of (toyID : value)
   var idToQtyMap = new Map();
-  if (query.id.length && query.qty.length && query.id.length == query.qty.length) { // numbers of elements match
+  if (query.id.length && query.qty.length && query.id.length == query.qty.length) {
+  // numbers of elements match
     for (var i = 0; i < query.id.length; i++) {
       var key = query.id[i];
       var val = query.qty[i];
 
-      if (!isNaN(val) && val > 0) { // qty> parameter is less than one or non-numeric, then it and the corresponding id> parameter should be ignored
-        if (idToQtyMap.has(key)) { // duplicate id
+      // ignore qty entries non-positive & non-numeric
+      if (!isNaN(val) && val > 0) {
+        // if toyID present, overwrite its value
+        if (idToQtyMap.has(key)) {
           idToQtyMap.set(key, Number(idToQtyMap.get(key)) + Number(val));
         } else {
           idToQtyMap.set(key, val);
         }
       }
     }
-
+    // create map between toyIDs & unit prices
     var idToPriceMap = new Map();
     var items = [];
     var totalPrice = 0;
-
+    // retrive all toys
     Toy.find( {id : Array.from(idToQtyMap.keys())}, (err, toys) => {
       if (err) {
           res.type('html').status(500);
           res.send('Error: ' + err);
       } else {
+        // populate toyID:price map
         toys.forEach((toy) => idToPriceMap.set(toy.id, toy.price));
-
+        // build toy item object
         for (var id of Array.from(idToPriceMap.keys())) {
           var item = {
             item : id,
@@ -179,8 +184,6 @@ app.get('/calculatePrice', (req, res) => {
   }
 
 });
-
-
 
 app.listen(3000, () => {
 	console.log('Listening on port 3000');
