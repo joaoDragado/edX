@@ -52,14 +52,16 @@ app.use('/findAnimals', (req, res) => {
     query.gender = req.query.gender
   }
   if (req.query.trait) {
-    query['trait'] = req.query.trait
+    query.traits = req.query.trait
   }
   if (Object.keys(query).length == 0) {
     // all query parameters are unspecified
     res.json({});
   }
-  else { // results returned should only contain the fields specified below
-    Animals.find(query, 'name species breed gender age', (err, animals) => {
+  else {
+  // results returned should only contain the fields specified below
+  // excluding _id field since MongoDB includes it by default
+    Animal.find(query, '-_id name species breed gender age', (err, animals) => {
       if (err) {
         res.type('html').status(500)
         res.send('Error: ' + err)
@@ -87,7 +89,7 @@ app.use('/animalsYoungerThan', (req, res) => {
   let out = {count: 0, names: []}
   let age = req.query.age
   if (age) {
-    Animals.find({age: {$lt: age}}, 'name', (err, animals) => {
+    Animal.find({age: {$lt: age}}, (err, animals) => {
       if (err) {
         res.type('html').status(500)
         res.send('Error: ' + err)
@@ -96,6 +98,7 @@ app.use('/animalsYoungerThan', (req, res) => {
         let count = animals.length
         if (count > 0) { // if results found
           out.count = count
+          // select only the name field & populate the names array
           out.names = animals.map(animal => animal.name)
           res.json(out);
         }
@@ -113,6 +116,9 @@ app.use('/animalsYoungerThan', (req, res) => {
 
 
 /*This API calculates the total price of purchasing the specified quantities of the Toys with the corresponding IDs, using the Toys’ price from the database.
+
+e.g /calculatePrice?id[0]=123&qty[0]=2&id[1]=456&qty[1]=3
+
 The return value is an object that has two properties:
 “totalPrice”: the calculated total for all Toys.
 “items”: an array containing objects that hold information about the Toys that are included; for each Toy, there should be an object with these three properties:
@@ -120,9 +126,60 @@ The return value is an object that has two properties:
   “qty”: the quantity of the Toy, as specified in the query
   “subtotal”: the Toy’s price multiplied by the quantity
 */
-app.use('/calculatePrice', (req, res) => {
-  res.json({});
+
+app.get('/calculatePrice', (req, res) => {
+  var query = {};
+  if (req.query.id) {
+      query.id = req.query.id;
+  }
+  if (req.query.qty) {
+      query.qty = req.query.qty;
+  }
+
+  var idToQtyMap = new Map();
+  if (query.id.length && query.qty.length && query.id.length == query.qty.length) { // numbers of elements match
+    for (var i = 0; i < query.id.length; i++) {
+      var key = query.id[i];
+      var val = query.qty[i];
+
+      if (!isNaN(val) && val > 0) { // qty> parameter is less than one or non-numeric, then it and the corresponding id> parameter should be ignored
+        if (idToQtyMap.has(key)) { // duplicate id
+          idToQtyMap.set(key, Number(idToQtyMap.get(key)) + Number(val));
+        } else {
+          idToQtyMap.set(key, val);
+        }
+      }
+    }
+
+    var idToPriceMap = new Map();
+    var items = [];
+    var totalPrice = 0;
+
+    Toy.find( {id : Array.from(idToQtyMap.keys())}, (err, toys) => {
+      if (err) {
+          res.type('html').status(500);
+          res.send('Error: ' + err);
+      } else {
+        toys.forEach((toy) => idToPriceMap.set(toy.id, toy.price));
+
+        for (var id of Array.from(idToPriceMap.keys())) {
+          var item = {
+            item : id,
+            qty : idToQtyMap.get(id),
+            subtotal : idToQtyMap.get(id) * idToPriceMap.get(id)
+          }
+          totalPrice += item.subtotal;
+          items.push(item);
+        }
+          res.json({totalPrice : totalPrice, items : items});
+      }
+    });
+  } else {
+    res.json({});
+  }
+
 });
+
 
 
 app.listen(3000, () => {
