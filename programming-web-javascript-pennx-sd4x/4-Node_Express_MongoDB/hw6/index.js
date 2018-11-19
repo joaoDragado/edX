@@ -18,39 +18,172 @@ If the id> parameter is unspecified, or if there is no Toy that has a matching I
 ex. /findToy?id=1234
 */
 app.use('/findToy', (req, res) => {
-  res.json({});
+  var toyID = req.query.id;
+  if (toyID) {
+    Toy.findOne( {id: toyID}, (err, toy) => {
+      if (err) {
+        res.type('html').status(500);
+        res.send('Error: ' + err);
+      }
+      else if (toy) {
+        res.json(toy);
+      }
+      else { // no toy found
+        res.json({});
+      }
+    });
+  }
+  else { // no id specified
+    res.json({});
+  }
 });
+
 
 /*
 This API finds all Animals in the “animals” collection that have a species and gender that match the species> and gender> parameters, respectively, and for which one of the Animal’s traits matches the trait> parameter. All matches should be complete matches, not partial matches using regular expressions, for instance.
+e.g. /findAnimals?species=Dog&trait=loyal&gender=female
 */
 app.use('/findAnimals', (req, res) => {
-  res.json({});
+  var query = {};
+  if (req.query.species) {
+    query.species = req.query.species
+  }
+  if (req.query.gender) {
+    query.gender = req.query.gender
+  }
+  if (req.query.trait) {
+    query.traits = req.query.trait
+  }
+  if (Object.keys(query).length == 0) {
+    // all query parameters are unspecified
+    res.json({});
+  }
+  else {
+  // results returned should only contain the fields specified below
+  // excluding _id field since MongoDB includes it by default
+    Animal.find(query, '-_id name species breed gender age', (err, animals) => {
+      if (err) {
+        res.type('html').status(500)
+        res.send('Error: ' + err)
+      }
+      else if (animals){
+        res.json(animals);
+      }
+      else { // no results found
+        res.json({});
+      }
+    });
+  }
+
 });
+
 
 /*
 This API finds all Animals in the “animals” collection that have an age that is less than (but not equal to!) the age> parameter.
+e.g. /animalsYoungerThan?age=12
 The return value is an object that has two properties:
 “count”: the number of Animals whose age is less than the age> parameter.
 “names”: an array containing the names of the Animals whose age is less than the age> parameter (these can be arranged in any order in the array)
 */
 app.use('/animalsYoungerThan', (req, res) => {
-  res.json({});
+  let out = {count: 0, names: []}
+  let age = req.query.age
+  if (age) {
+    Animal.find({age: {$lt: age}}, (err, animals) => {
+      if (err) {
+        res.type('html').status(500)
+        res.send('Error: ' + err)
+      }
+      else {
+        let count = animals.length
+        if (count > 0) { // if results found
+          out.count = count
+          // select only the name field & populate the names array
+          out.names = animals.map(animal => animal.name)
+          res.json(out);
+        }
+        else { // no animals below age
+          res.json({count:0})
+        }
+      }
+    })
+  }
+  else { // query parameter unspecified
+    res.json({});
+  }
+
 });
 
+
 /*This API calculates the total price of purchasing the specified quantities of the Toys with the corresponding IDs, using the Toys’ price from the database.
+
 The return value is an object that has two properties:
 “totalPrice”: the calculated total for all Toys.
 “items”: an array containing objects that hold information about the Toys that are included; for each Toy, there should be an object with these three properties:
   “item”: the Toy’s ID, as specified in the query
   “qty”: the quantity of the Toy, as specified in the query
   “subtotal”: the Toy’s price multiplied by the quantity
+
+e.g /calculatePrice?id[0]=123&qty[0]=2&id[1]=456&qty[1]=3
 */
-app.use('/calculatePrice', (req, res) => {
-  res.json({});
+
+app.get('/calculatePrice', (req, res) => {
+  var query = {};
+  if (req.query.id) {
+      query.id = req.query.id;
+  }
+  if (req.query.qty) {
+      query.qty = req.query.qty;
+  }
+
+  // transform query into map of (toyID : value)
+  var toyQtyMap = new Map();
+  if (query.id.length && query.qty.length && query.id.length == query.qty.length) {
+  // numbers of elements match
+    for (var i = 0; i < query.id.length; i++) {
+      var key = query.id[i];
+      var val = query.qty[i];
+
+      // ignore qty entries non-positive & non-numeric
+      if (!isNaN(val) && val > 0) {
+        // if toyID present, overwrite its value
+        if (toyQtyMap.has(key)) {
+          toyQtyMap.set(key, Number(toyQtyMap.get(key)) + Number(val));
+        } else {
+          toyQtyMap.set(key, val);
+        }
+      }
+    }
+    // create map between toyIDs & unit prices
+    var toyPriceMap = new Map();
+    var items = [];
+    var totalPrice = 0;
+    // retrive all toys
+    Toy.find( {id : Array.from(toyQtyMap.keys())}, (err, toys) => {
+      if (err) {
+          res.type('html').status(500);
+          res.send('Error: ' + err);
+      } else {
+        // populate toyID:price map
+        toys.forEach((toy) => toyPriceMap.set(toy.id, toy.price));
+        // build toy item object
+        for (var id of Array.from(toyPriceMap.keys())) {
+          var item = {
+            item : id,
+            qty : toyQtyMap.get(id),
+            subtotal : toyQtyMap.get(id) * toyPriceMap.get(id)
+          }
+          totalPrice += item.subtotal;
+          items.push(item);
+        }
+          res.json({totalPrice : totalPrice, items : items});
+      }
+    });
+  } else {
+    res.json({});
+  }
+
 });
-
-
 
 app.listen(3000, () => {
 	console.log('Listening on port 3000');
